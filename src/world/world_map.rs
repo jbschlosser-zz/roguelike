@@ -23,6 +23,8 @@ impl WorldMap {
         let mut world = WorldMap { width: width, height: height, tiles: tiles };
 
         // Generate random features.
+        // Tried to make it generate each room a random shape, 
+        // but instead it does all circles or all squares
         let t = rng.gen_range::<i32>(3,13);
         let mut feature_shapes: Vec<(Box<Fn(&mut R) -> FeatureBuilder>, u32) > =
             vec![
