@@ -23,15 +23,18 @@ impl WorldMap {
         let mut world = WorldMap { width: width, height: height, tiles: tiles };
 
         // Generate random features.
-        let feature_shapes: Vec<(Box<Fn(&mut R) -> FeatureBuilder>, u32)> =
-            vec![
-                (Box::new(|rng: &mut R| {
-                    let i = rng.gen_range::<i32>(3, 15);
-                    let j = rng.gen_range::<i32>(3, 15);
-                    FeatureBuilder::room(i, j)
-                }), 1)
-            ];
-        let feature_table = RandomTable::new(feature_shapes);
+        let mut feature_generators: Vec<(Box<Fn(&mut R) -> FeatureBuilder>, u32)            > = vec![
+                    (Box::new(|rng: &mut R| {
+                        let i = rng.gen_range::<i32>(3,15);
+                        let j = rng.gen_range::<i32>(3,15);
+                        FeatureBuilder::room(i,j)
+                    }), 1),
+                    (Box::new(|rng: &mut R| {
+                        let j = rng.gen_range::<i32>(3,15);
+                        FeatureBuilder::room_circle(j)
+                    }), 1)
+                ];
+        let feature_table = RandomTable::new(feature_generators);
         let mut features: Vec<Feature> = Vec::new();
         'outer: while features.len() < 12 {
             let feature_builder = feature_table.generate(rng);
@@ -362,6 +365,31 @@ impl FeatureBuilder {
         }
 
         FeatureBuilder::new(components)
+    }
+    pub fn room_circle(radius: i32) -> Self {
+        let mut components = Vec::new();
+        for x in -radius..radius+1 {
+            for y in -radius..radius+1 {
+                let terrain = 
+                    if FeatureBuilder::distance_from_center(x,y) == radius {
+                        Terrain::Wall
+                    }
+                    else if FeatureBuilder::distance_from_center(x,y) < radius {
+                        Terrain::Floor
+                    }
+                    else {
+                        Terrain::Nothing
+                    };
+                components.push((Location::new(x, y), terrain));
+            }
+        }
+
+        FeatureBuilder::new(components)
+    }
+    pub fn distance_from_center(xi: i32,yi: i32) -> i32 {
+        let c: i32 = (xi * xi) + (yi * yi);
+        let c = (c as f64).sqrt();
+        c as i32
     }
     pub fn location(mut self, loc: Location) -> Self {
         self.location = loc;
